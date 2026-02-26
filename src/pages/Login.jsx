@@ -56,7 +56,7 @@ const Login = ({ onLoginWithEmail }) => {
             <Icon name="leave" size={30} color="#fff" />
           </div>
           <h1 style={{ fontFamily: "Syne", fontSize: 32, fontWeight: 800, color: "#fff" }}>
-            LeaveFlow
+            JJFIndia
           </h1>
           <p style={{ color: "#a5b4fc", fontSize: 14, marginTop: 6 }}>
             Employee Leave Management System

@@ -53,7 +53,7 @@ const Sidebar = ({ user, activeTab, setActiveTab, sidebarOpen }) => {
           </div>
           <div>
             <div style={{ fontFamily: "Syne", fontWeight: 800, fontSize: 15, color: "#1a1d2e", lineHeight: 1.1 }}>
-              LeaveFlow
+              JJFIndia
             </div>
             <div style={{ fontSize: 10, color: "#9ca3af", fontWeight: 500 }}>
               Management System

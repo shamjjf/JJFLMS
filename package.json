@@ -1,7 +1,7 @@
 {
   "name": "leave-management-system",
   "version": "1.0.0",
-  "description": "Employee Leave Management System - LeaveFlow",
+  "description": "Employee Leave Management System - JJFIndia",
   "private": true,
   "dependencies": {
     "axios": "^1.13.5",

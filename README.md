@@ -1,4 +1,4 @@
-# LeaveFlow — Employee Leave Management System
+# JJFIndia — Employee Leave Management System
 
 A fully functional, role-based Employee Leave Management System built with React.
 
