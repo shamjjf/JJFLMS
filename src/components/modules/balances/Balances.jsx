@@ -1,17 +1,18 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // src/components/modules/balances/Balances.jsx
-// Displays real-time leave balances for all employees (HR/Admin)
-// or only the current employee's balances (Employee role).
+// Displays real-time leave balances — uses dynamic leaveTypes from API
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { useState } from "react";
 import { Icon } from "../../common";
-import { LEAVE_TYPES, DEPARTMENTS } from "../../../data/mockData";
+import { DEPARTMENTS } from "../../../data/mockData";
 import { avatarColor } from "../../../utils/helpers";
 
-const Balances = ({ user, employees, balances }) => {
+const Balances = ({ user, employees, balances, leaveTypes }) => {
   const [deptFilter, setDeptFilter] = useState("All");
   const [search,     setSearch]     = useState("");
+
+  const types = leaveTypes || [];
 
   const empList =
     user.role === "employee"
@@ -69,7 +70,7 @@ const Balances = ({ user, employees, balances }) => {
             <tr>
               <th>Employee</th>
               <th>Department</th>
-              {LEAVE_TYPES.map((lt) => (
+              {types.map((lt) => (
                 <th key={lt.id} style={{ color: lt.color }}>{lt.name}</th>
               ))}
             </tr>
@@ -92,9 +93,9 @@ const Balances = ({ user, employees, balances }) => {
                   </td>
                   <td style={{ fontSize: 13, color: "#6b7280" }}>{emp.dept}</td>
 
-                  {LEAVE_TYPES.map((lt) => {
+                  {types.map((lt) => {
                     const b   = bal[lt.id] ?? 0;
-                    const pct = Math.round((b / lt.annual) * 100);
+                    const pct = lt.annual > 0 ? Math.round((b / lt.annual) * 100) : 0;
                     return (
                       <td key={lt.id}>
                         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>

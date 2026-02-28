@@ -51,7 +51,7 @@ export default function App() {
       case "approvals":
         return <Approvals user={user} leaves={leaves} employees={employees} balances={balances} reviewLeave={reviewLeave} />;
       case "balances":
-        return <Balances user={user} employees={employees} balances={balances} />;
+        return <Balances user={user} employees={employees} balances={balances} leaveTypes={leaveTypes} />;
       case "calendar":
         return <HolidayCalendar user={user} holidays={holidays} addHoliday={addHoliday} deleteHoliday={deleteHoliday} />;
       case "reports":
