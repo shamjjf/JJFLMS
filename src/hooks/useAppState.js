@@ -1,5 +1,5 @@
 // ─────────────────────────────────────────────────────────────────────────────
-// src/hooks/useAppState.js — email login + edit/delete employee
+// src/hooks/useAppState.js — with edit/delete leave types
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { useState, useEffect, useCallback } from "react";
@@ -133,7 +133,6 @@ export function useAppState() {
       if (result.success) {
         const empData = await api.getEmployees();
         setEmployees(empData);
-        // If editing self, refresh user too
         if (id === user?.id) {
           const userData = await api.getUser();
           setUser(userData);
@@ -167,6 +166,28 @@ export function useAppState() {
     } catch (err) { throw new Error(err.response?.data?.message || "Failed to add leave type."); }
   };
 
+  const editLeaveType = async (dbId, form) => {
+    try {
+      const result = await api.editLeaveType(dbId, form);
+      if (result.success) {
+        const [lt, b] = await Promise.all([api.getLeaveTypes(), api.getBalances()]);
+        setLeaveTypes(lt); setBalances(b);
+      }
+      return result;
+    } catch (err) { throw new Error(err.response?.data?.message || "Failed to update leave type."); }
+  };
+
+  const deleteLeaveType = async (dbId) => {
+    try {
+      const result = await api.deleteLeaveType(dbId);
+      if (result.success) {
+        const [lt, b] = await Promise.all([api.getLeaveTypes(), api.getBalances()]);
+        setLeaveTypes(lt); setBalances(b);
+      }
+      return result;
+    } catch (err) { throw new Error(err.response?.data?.message || "Failed to delete leave type."); }
+  };
+
   const pendingCount = Array.isArray(leaves) ? leaves.filter((l) => l.status === "pending").length : 0;
 
   return {
@@ -177,6 +198,6 @@ export function useAppState() {
     submitLeave, cancelLeave, reviewLeave,
     addHoliday, deleteHoliday,
     addEmployee, editEmployee, deleteEmployee,
-    addLeaveType,
+    addLeaveType, editLeaveType, deleteLeaveType,
   };
 }

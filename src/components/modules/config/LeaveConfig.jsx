@@ -1,6 +1,6 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // src/components/modules/config/LeaveConfig.jsx
-// Leave type configuration with Add Leave Type modal (Admin only)
+// Leave type configuration with Add, Edit, Delete (Admin only)
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { useState } from "react";
@@ -26,17 +26,26 @@ const COLOR_OPTIONS = [
 
 const EMPTY_FORM = { code: "", name: "", color: "#6366f1", annualLimit: "", carryForward: "0" };
 
-const LeaveConfig = ({ user, leaveTypes, addLeaveType }) => {
+const LeaveConfig = ({ user, leaveTypes, addLeaveType, editLeaveType, deleteLeaveType }) => {
   const [showAdd, setShowAdd] = useState(false);
+  const [showEdit, setShowEdit] = useState(false);
+  const [showDelete, setShowDelete] = useState(false);
+  const [editingType, setEditingType] = useState(null);
+  const [deletingType, setDeletingType] = useState(null);
   const [form, setForm] = useState(EMPTY_FORM);
+  const [editForm, setEditForm] = useState({});
   const [errors, setErrors] = useState({});
-  const [success, setSuccess] = useState(false);
+  const [editErrors, setEditErrors] = useState({});
+  const [success, setSuccess] = useState("");
+  const [deleting, setDeleting] = useState(false);
 
   const canManage = user?.role === "admin";
   const types = leaveTypes || [];
 
   const set = (key, val) => setForm((f) => ({ ...f, [key]: val }));
+  const setEdit = (key, val) => setEditForm((f) => ({ ...f, [key]: val }));
 
+  // ── Add validation ──────────────────────────────────────────────────────
   const validate = () => {
     const e = {};
     if (!form.code.trim()) e.code = "Code is required (e.g. CL, SL)";
@@ -49,6 +58,17 @@ const LeaveConfig = ({ user, leaveTypes, addLeaveType }) => {
     return Object.keys(e).length === 0;
   };
 
+  // ── Edit validation ─────────────────────────────────────────────────────
+  const validateEdit = () => {
+    const e = {};
+    if (!editForm.name.trim()) e.name = "Name is required";
+    if (!editForm.annualLimit || parseInt(editForm.annualLimit) < 1) e.annualLimit = "Annual limit must be at least 1";
+    if (editForm.carryForward && parseInt(editForm.carryForward) < 0) e.carryForward = "Cannot be negative";
+    setEditErrors(e);
+    return Object.keys(e).length === 0;
+  };
+
+  // ── Add handler ─────────────────────────────────────────────────────────
   const handleAdd = async () => {
     if (!validate()) return;
     try {
@@ -59,13 +79,66 @@ const LeaveConfig = ({ user, leaveTypes, addLeaveType }) => {
         annualLimit: parseInt(form.annualLimit),
         carryForward: parseInt(form.carryForward) || 0,
       });
-      setSuccess(true);
+      setSuccess("Leave type added successfully!");
       setShowAdd(false);
       setForm(EMPTY_FORM);
       setErrors({});
-      setTimeout(() => setSuccess(false), 3000);
+      setTimeout(() => setSuccess(""), 3000);
     } catch (err) {
       setErrors({ submit: err.message || "Failed to add leave type" });
+    }
+  };
+
+  // ── Edit handler ────────────────────────────────────────────────────────
+  const openEdit = (lt) => {
+    setEditingType(lt);
+    setEditForm({
+      name: lt.name,
+      color: lt.color,
+      annualLimit: String(lt.annual),
+      carryForward: String(lt.carryForward),
+    });
+    setEditErrors({});
+    setShowEdit(true);
+  };
+
+  const handleEdit = async () => {
+    if (!validateEdit()) return;
+    try {
+      await editLeaveType(editingType.dbId, {
+        name: editForm.name,
+        color: editForm.color,
+        annualLimit: parseInt(editForm.annualLimit),
+        carryForward: parseInt(editForm.carryForward) || 0,
+      });
+      setSuccess("Leave type updated successfully!");
+      setShowEdit(false);
+      setEditingType(null);
+      setEditErrors({});
+      setTimeout(() => setSuccess(""), 3000);
+    } catch (err) {
+      setEditErrors({ submit: err.message || "Failed to update leave type" });
+    }
+  };
+
+  // ── Delete handler ──────────────────────────────────────────────────────
+  const openDelete = (lt) => {
+    setDeletingType(lt);
+    setShowDelete(true);
+  };
+
+  const handleDelete = async () => {
+    setDeleting(true);
+    try {
+      await deleteLeaveType(deletingType.dbId);
+      setSuccess("Leave type deleted successfully!");
+      setShowDelete(false);
+      setDeletingType(null);
+      setTimeout(() => setSuccess(""), 3000);
+    } catch (err) {
+      alert(err.message || "Failed to delete leave type");
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -88,7 +161,7 @@ const LeaveConfig = ({ user, leaveTypes, addLeaveType }) => {
       {success && (
         <div style={{ background: "#d1fae5", border: "1px solid #6ee7b7", borderRadius: 12, padding: "14px 18px", marginBottom: 20, display: "flex", alignItems: "center", gap: 10, color: "#065f46", fontSize: 14, fontWeight: 600 }}>
           <Icon name="check" size={18} color="#10b981" />
-          Leave type added successfully! Balances created for all employees.
+          {success}
         </div>
       )}
 
@@ -104,9 +177,19 @@ const LeaveConfig = ({ user, leaveTypes, addLeaveType }) => {
                 <h3 style={{ fontFamily: "Syne", fontWeight: 700, fontSize: 16 }}>{lt.name}</h3>
               </div>
               {canManage && (
-                <button className="btn btn-ghost btn-sm">
-                  <Icon name="edit" size={13} />
-                </button>
+                <div style={{ display: "flex", gap: 4 }}>
+                  <button className="btn btn-ghost btn-sm" onClick={() => openEdit(lt)} title="Edit">
+                    <Icon name="edit" size={13} />
+                  </button>
+                  <button
+                    className="btn btn-ghost btn-sm"
+                    onClick={() => openDelete(lt)}
+                    title="Delete"
+                    style={{ color: "#ef4444" }}
+                  >
+                    <Icon name="trash" size={13} />
+                  </button>
+                </div>
               )}
             </div>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
@@ -123,7 +206,7 @@ const LeaveConfig = ({ user, leaveTypes, addLeaveType }) => {
         ))}
       </div>
 
-      {/* Add Leave Type Modal */}
+      {/* ── Add Leave Type Modal ──────────────────────────────────────────── */}
       {showAdd && (
         <Modal title="Add New Leave Type" onClose={() => { setShowAdd(false); setErrors({}); }}>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr", gap: 14 }}>
@@ -132,7 +215,6 @@ const LeaveConfig = ({ user, leaveTypes, addLeaveType }) => {
               <input className="form-input" placeholder="e.g. WFH" value={form.code} onChange={(e) => set("code", e.target.value.toUpperCase())} maxLength={10} style={{ textTransform: "uppercase" }} />
               {errors.code && <div style={{ color: "#ef4444", fontSize: 12, marginTop: 4 }}>{errors.code}</div>}
             </div>
-
             <div className="form-group">
               <label className="form-label">Name *</label>
               <input className="form-input" placeholder="e.g. Work From Home" value={form.name} onChange={(e) => set("name", e.target.value)} />
@@ -146,36 +228,22 @@ const LeaveConfig = ({ user, leaveTypes, addLeaveType }) => {
               <input className="form-input" type="number" min="1" placeholder="e.g. 12" value={form.annualLimit} onChange={(e) => set("annualLimit", e.target.value)} />
               {errors.annualLimit && <div style={{ color: "#ef4444", fontSize: 12, marginTop: 4 }}>{errors.annualLimit}</div>}
             </div>
-
             <div className="form-group">
               <label className="form-label">Carry Forward (days)</label>
               <input className="form-input" type="number" min="0" placeholder="0" value={form.carryForward} onChange={(e) => set("carryForward", e.target.value)} />
               {errors.carryForward && <div style={{ color: "#ef4444", fontSize: 12, marginTop: 4 }}>{errors.carryForward}</div>}
             </div>
-
             <div className="form-group">
               <label className="form-label">Color</label>
               <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 4 }}>
                 {COLOR_OPTIONS.map((c) => (
-                  <div
-                    key={c.value}
-                    onClick={() => set("color", c.value)}
-                    title={c.label}
-                    style={{
-                      width: 28, height: 28,
-                      background: c.value,
-                      borderRadius: 8,
-                      cursor: "pointer",
-                      border: form.color === c.value ? "3px solid #1a1d2e" : "3px solid transparent",
-                      transition: "all 0.15s",
-                    }}
-                  />
+                  <div key={c.value} onClick={() => set("color", c.value)} title={c.label}
+                    style={{ width: 28, height: 28, background: c.value, borderRadius: 8, cursor: "pointer", border: form.color === c.value ? "3px solid #1a1d2e" : "3px solid transparent", transition: "all 0.15s" }} />
                 ))}
               </div>
             </div>
           </div>
 
-          {/* Preview */}
           {form.code && form.name && (
             <div style={{ background: "#f9fafb", borderRadius: 10, padding: "12px 16px", marginBottom: 14, borderLeft: `4px solid ${form.color}` }}>
               <div style={{ fontSize: 11, color: "#9ca3af", fontWeight: 600, marginBottom: 4 }}>PREVIEW</div>
@@ -194,6 +262,80 @@ const LeaveConfig = ({ user, leaveTypes, addLeaveType }) => {
               <Icon name="check" size={15} color="#fff" /> Add Leave Type
             </button>
             <button className="btn btn-ghost" onClick={() => { setShowAdd(false); setErrors({}); }}>Cancel</button>
+          </div>
+        </Modal>
+      )}
+
+      {/* ── Edit Leave Type Modal ─────────────────────────────────────────── */}
+      {showEdit && editingType && (
+        <Modal title={`Edit Leave Type — ${editingType.id}`} onClose={() => { setShowEdit(false); setEditErrors({}); }}>
+          <div className="form-group" style={{ marginBottom: 14 }}>
+            <label className="form-label">Name *</label>
+            <input className="form-input" value={editForm.name} onChange={(e) => setEdit("name", e.target.value)} />
+            {editErrors.name && <div style={{ color: "#ef4444", fontSize: 12, marginTop: 4 }}>{editErrors.name}</div>}
+          </div>
+
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+            <div className="form-group">
+              <label className="form-label">Annual Limit (days) *</label>
+              <input className="form-input" type="number" min="1" value={editForm.annualLimit} onChange={(e) => setEdit("annualLimit", e.target.value)} />
+              {editErrors.annualLimit && <div style={{ color: "#ef4444", fontSize: 12, marginTop: 4 }}>{editErrors.annualLimit}</div>}
+            </div>
+            <div className="form-group">
+              <label className="form-label">Carry Forward (days)</label>
+              <input className="form-input" type="number" min="0" value={editForm.carryForward} onChange={(e) => setEdit("carryForward", e.target.value)} />
+              {editErrors.carryForward && <div style={{ color: "#ef4444", fontSize: 12, marginTop: 4 }}>{editErrors.carryForward}</div>}
+            </div>
+          </div>
+
+          <div className="form-group" style={{ marginTop: 14 }}>
+            <label className="form-label">Color</label>
+            <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 4 }}>
+              {COLOR_OPTIONS.map((c) => (
+                <div key={c.value} onClick={() => setEdit("color", c.value)} title={c.label}
+                  style={{ width: 28, height: 28, background: c.value, borderRadius: 8, cursor: "pointer", border: editForm.color === c.value ? "3px solid #1a1d2e" : "3px solid transparent", transition: "all 0.15s" }} />
+              ))}
+            </div>
+          </div>
+
+          {editErrors.submit && <div style={{ color: "#ef4444", fontSize: 13, marginBottom: 10, marginTop: 10 }}>{editErrors.submit}</div>}
+
+          <div style={{ display: "flex", gap: 10, marginTop: 16 }}>
+            <button className="btn btn-primary" onClick={handleEdit}>
+              <Icon name="check" size={15} color="#fff" /> Save Changes
+            </button>
+            <button className="btn btn-ghost" onClick={() => { setShowEdit(false); setEditErrors({}); }}>Cancel</button>
+          </div>
+        </Modal>
+      )}
+
+      {/* ── Delete Confirmation Modal ─────────────────────────────────────── */}
+      {showDelete && deletingType && (
+        <Modal title="Delete Leave Type" onClose={() => setShowDelete(false)}>
+          <div style={{ textAlign: "center", padding: "10px 0" }}>
+            <div style={{ width: 56, height: 56, borderRadius: "50%", background: "#fef2f2", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
+              <Icon name="trash" size={24} color="#ef4444" />
+            </div>
+            <h3 style={{ fontFamily: "Syne", fontWeight: 700, fontSize: 18, marginBottom: 8 }}>
+              Delete "{deletingType.name}"?
+            </h3>
+            <p style={{ color: "#6b7280", fontSize: 14, marginBottom: 6 }}>
+              Code: <strong>{deletingType.id}</strong>
+            </p>
+            <p style={{ color: "#6b7280", fontSize: 13, marginBottom: 20 }}>
+              This will permanently delete this leave type and remove all associated balances. This action cannot be undone.
+            </p>
+            <div style={{ display: "flex", gap: 10, justifyContent: "center" }}>
+              <button
+                className="btn"
+                onClick={handleDelete}
+                disabled={deleting}
+                style={{ background: "#ef4444", color: "#fff", border: "none", padding: "10px 24px", borderRadius: 10, fontWeight: 700, cursor: deleting ? "not-allowed" : "pointer", opacity: deleting ? 0.6 : 1 }}
+              >
+                {deleting ? "Deleting..." : "Yes, Delete"}
+              </button>
+              <button className="btn btn-ghost" onClick={() => setShowDelete(false)}>Cancel</button>
+            </div>
           </div>
         </Modal>
       )}

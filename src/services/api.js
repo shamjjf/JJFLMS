@@ -1,5 +1,5 @@
 // ─────────────────────────────────────────────────────────────────────────────
-// src/services/api.js — with edit + delete employee
+// src/services/api.js — with edit/delete leave types
 // ─────────────────────────────────────────────────────────────────────────────
 
 import axios from "axios";
@@ -110,6 +110,16 @@ export async function deleteEmployee(id) {
 
 export async function addLeaveType(form) {
   const { data } = await API.post("/leave-types", form);
+  return data;
+}
+
+export async function editLeaveType(id, form) {
+  const { data } = await API.put(`/leave-types/${id}`, form);
+  return data;
+}
+
+export async function deleteLeaveType(id) {
+  const { data } = await API.delete(`/leave-types/${id}`);
   return data;
 }
 

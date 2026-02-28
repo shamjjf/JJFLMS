@@ -1,5 +1,5 @@
 // ─────────────────────────────────────────────────────────────────────────────
-// src/App.jsx — Email login only + edit/delete employee
+// src/App.jsx — with edit/delete leave types
 // ─────────────────────────────────────────────────────────────────────────────
 
 import GlobalStyles  from "./styles/GlobalStyles";
@@ -28,7 +28,7 @@ export default function App() {
     submitLeave, cancelLeave, reviewLeave,
     addHoliday, deleteHoliday,
     addEmployee, editEmployee, deleteEmployee,
-    addLeaveType,
+    addLeaveType, editLeaveType, deleteLeaveType,
   } = useAppState();
 
   if (!user) {
@@ -59,7 +59,7 @@ export default function App() {
       case "employees":
         return <Employees user={user} employees={employees} addEmployee={addEmployee} editEmployee={editEmployee} deleteEmployee={deleteEmployee} />;
       case "leave-config":
-        return <LeaveConfig user={user} leaveTypes={leaveTypes} addLeaveType={addLeaveType} />;
+        return <LeaveConfig user={user} leaveTypes={leaveTypes} addLeaveType={addLeaveType} editLeaveType={editLeaveType} deleteLeaveType={deleteLeaveType} />;
       default:
         return <Dashboard user={user} leaves={leaves} employees={employees} balances={balances} />;
     }
